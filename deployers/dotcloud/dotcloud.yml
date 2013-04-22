@@ -1,0 +1,7 @@
+play:
+  type: custom
+  buildscript: play2/builder
+  ports:
+    www: http
+  process: ~/run
+  approot: application
