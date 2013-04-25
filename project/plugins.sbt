@@ -6,3 +6,11 @@ resolvers += "Typesafe repository" at "http://repo.typesafe.com/typesafe/release
 
 // Use the Play sbt plugin for Play projects
 addSbtPlugin("play" % "sbt-plugin" % "2.1.0")
+
+// this plugin allows to access build-time info (from Build.scala)
+addSbtPlugin("com.eed3si9n" % "sbt-buildinfo" % "0.2.2")
+
+//SBT aether deploy plugin
+addSbtPlugin("no.arktekk.sbt" % "aether-deploy" % "0.9")
+
+addSbtPlugin("com.github.play2war" % "play2-war-plugin" % "0.9")
