@@ -14,27 +14,15 @@ head
   meta(name="viewport" content="width=device-width")
 
   link(rel="stylesheet" type="text/css" href={ assets + "bootstrap/css/bootstrap.min.css"})
-  link(rel='stylesheet' type='text/css' href={ assets + "bootstrap/css/bootstrap-responsive.min.css"})
   link(rel='stylesheet' type='text/css' href={ assets + "stylesheets/main.css"})
-
-  script
-    var root = "";
 
   script(type="text/javascript" src={ assets + "javascripts/jquery-1.9.0.min.js"})
   script(type="text/javascript" src={ assets + "bootstrap/js/bootstrap.min.js"})
   script(type="text/javascript" src={ assets + "javascripts/simpleCart.min.js"})
 
 body
-  div.container
-    .row
-      .span12
-        - render("layouts/header.jade", Map("assets" -> assets))
-    hr
-    .row
-      .span12
-        != body
-    hr
-    .row
-      .span12
-        - render("layouts/footer.jade", Map("assets" -> assets))
+  div.container.boxed
+    - render("layouts/header.jade", Map("assets" -> assets))
+    != body
+    - render("layouts/footer.jade", Map("assets" -> assets))
 

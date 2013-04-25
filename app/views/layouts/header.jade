@@ -1,10 +1,19 @@
 -@ val assets:String
 
-div(class="masthead")
-  .row-fluid
-    .span6
-      img(src={ assets + "img/logo.png"})
-    .span6
-      div.pull-right
-        Shopping Cart
-
+.masthead
+  .row
+    .span3.logo
+      h3.muted Greg's T-Shirts
+    .span8
+      .row
+        .span1 &nbsp;
+        .span3
+          h4 Mobile Checkout Enabled
+          .row
+            .span6
+              img.icon(src={ assets + "images/androidmarket_grey.jpg" })
+              img.icon(src={ assets + "images/appstore_grey.jpg" })
+        .span2.pull-right
+          h4 Shopping Cart
+          i.icon-shopping-cart 
+          | Empty
