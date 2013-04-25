@@ -2,7 +2,8 @@
 body {
     padding-top: 20px;
     padding-bottom: 60px;
-    background: #ffffff
+    background: #aaa;
+    background-image: url(/assets/images/bg.jpg)
 }
 
 h4 {
