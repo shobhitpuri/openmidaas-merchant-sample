@@ -49,7 +49,7 @@ object ApplicationBuild extends Build {
   )
 
   val main = play.Project(appName, appVersion, appDependencies,
-      settings = Defaults.defaultSettings ++ buildInfoSettings
+      settings = Defaults.defaultSettings ++ buildInfoSettings ++ publishSettings ++ aetherSettings).settings(
     ).settings(
       sourceGenerators in Compile <+= buildInfo,
       buildInfoKeys := Seq[BuildInfoKey](name, version, scalaVersion, sbtVersion),
