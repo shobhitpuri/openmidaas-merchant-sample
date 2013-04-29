@@ -6,7 +6,7 @@ seq(scalateSettings:_*)
 scalateTemplateConfig in Compile <<= (sourceDirectory in Compile) ( base =>
   Seq(
     TemplateConfig(
-      base / "app/views",
+      base / "views",
       Seq(
         // "import template helpers"
       ),
