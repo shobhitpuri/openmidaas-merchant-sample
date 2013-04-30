@@ -15,5 +15,18 @@
               img.icon(src={ assets + "images/appstore_grey.jpg" })
         .span2.pull-right
           h4 Shopping Cart
-          i.icon-shopping-cart 
-          | Empty
+          .row
+            .cart.span2.pull-left
+              i.icon-shopping-cart(style="margin-right: 7px;") 
+              span.simpleCart_quantity 
+              | items
+              span.simpleCart_total
+            i.icon-remove-sign.simpleCart_empty.pull-right
+          .row.cart-detail.hide
+            .simpleCart_items
+          .row.checkout-row
+            .btn-group.pull-right
+              a.btn.btn-success.dropdown-toggle(data-toggle="dropdown" href="#") Checkout
+              ul.dropdown-menu.pull-right
+                li 
+                  img(src="http://qrfree.kaywa.com/?l=1&s=8&d=http%3A%2F%2Fopenmidaas-merchant.securekeylabs.com")
