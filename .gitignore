@@ -1,4 +1,9 @@
 logs/
 target/
 tmp/
+\.cache
+\.classpath
+\.project
+\.settings/
+\.target/
 .*\.swp

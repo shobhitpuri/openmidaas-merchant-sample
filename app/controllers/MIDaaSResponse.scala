@@ -19,20 +19,10 @@ package controllers
 import play.api._
 import play.api.mvc._
 
-object Application extends Controller {
-  
-  def index = Action {
-    Ok(Scalate("index.jade").render())
-  }
+object MIDaaSResponse extends Controller {
 
-  def checkout = Action { request =>
-  	println("Request:" + request.body)
-  	Ok
-  }
-
-  def fulfill = Action { request =>
+  def process = Action(parse.json) { request =>
     Ok
   }
-  
-}
 
+}
