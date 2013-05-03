@@ -17,11 +17,13 @@
 package controllers
 
 import play.api._
+import play.api.libs.json._
 import play.api.mvc._
 
 object MIDaaSResponse extends Controller {
 
   def process = Action(parse.json) { request =>
+    println(request.body)
     Ok
   }
 
