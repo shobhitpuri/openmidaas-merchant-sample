@@ -16,17 +16,46 @@
 
 package controllers
 
+import java.util.UUID
+
 import play.api._
+import play.api.Play.current
+import play.api.cache.Cache
 import play.api.mvc._
+
+import scala.util.Random
 
 object Application extends Controller {
   
   def index = Action {
+    Cache.set("mykey", "My value")
+    val s = Cache.getAs[String]("mykey")
+    Logger.info("Value retrieved from Cache: %s".format(s))
+    
     Ok(Scalate("index.jade").render())
   }
 
+  // creates a new checkout session
   def checkout = Action { request =>
-  	println("Request:" + request.body)
+  	val uuid = UUID.randomUUID().toString()
+    
+    def getCode: String = {
+  	  val c = Random.alphanumeric.take(5).mkString
+      if (Cache.getAs[String](c) == None) c
+      else getCode
+    }
+
+    val code = getCode
+
+  	// map the short code to the UUID
+  	Cache.set(uuid, code, 600)
+  	Cache.set(code, uuid, 600)
+
+  	// store the items and prices in the Cache
+  	
+  	// return the image to render.
+  	
+    println("Request:" + request.body)
   	Ok
   }
 

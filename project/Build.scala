@@ -30,7 +30,8 @@ object ApplicationBuild extends Build {
 
   val appDependencies = Seq(
     "org.fusesource.scalate" % "scalate-core_2.10" % "1.6.1",
-    "net.minidev" % "json-smart" % "1.1.1"
+    "net.minidev" % "json-smart" % "1.1.1",
+    "com.typesafe" %% "play-plugins-redis" % "2.1-RC2"
   )
 
   lazy val publishSettings = Seq(
@@ -66,6 +67,7 @@ object ApplicationBuild extends Build {
 
   val main = play.Project(appName, appVersion, appDependencies,
       settings = Defaults.defaultSettings ++ buildInfoSettings ++ publishSettings ++ aetherSettings).settings(
+      resolvers += "org.sedis" at "http://pk11-scratch.googlecode.com/svn/trunk"
     ).settings(
       sourceGenerators in Compile <+= buildInfo,
       buildInfoKeys := Seq[BuildInfoKey](name, version, scalaVersion, sbtVersion),
