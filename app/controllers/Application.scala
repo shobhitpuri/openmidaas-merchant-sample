@@ -48,36 +48,45 @@ object Application extends Controller {
   
 
   def index = Action { request =>
-    Cache.set("mykey", "My value")
-    val s = Cache.getAs[String]("mykey2")
-    Logger.info("Value retrieved from Cache: %s".format(s))
-    
+    val s:String = request.session.get("session").getOrElse {
+    	val uuid = UUID.randomUUID().toString()
+    	Cache.set(uuid, "", 600)  
+    	Logger.info("New Session: %s".format(uuid))
+    	request.session + ("session" -> uuid)
+    	uuid
+    } 
+        
     Ok(Scalate("index.jade").render()).withSession(request.session)
   }
 
   // creates a new checkout session
   def checkout = Action { request =>
     val BASE_QR_URL = "https://qrcode.kaywa.com/img.php?s=8&t=p&d=https%3A%2F%2Fmidaas-merchant.securekeylabs.com%2Fr%2F"
-    val uuid = UUID.randomUUID().toString()
     
-    def getCode: String = {
-  	  val c = Random.alphanumeric.take(5).mkString
-      if (Cache.get(c) == None) c
-      else getCode
+    val session_id: String = request.session.get("session").getOrElse { throw new Exception("missing session")}  
+    
+    val code: Option[String] = Cache.getAs[String](session_id) 
+    if (code.isEmpty)
+    {
+    	def getCode: String = {
+  	  		val c = Random.alphanumeric.take(5).mkString
+  	  		if (Cache.get(c) == None) c
+  	  		else getCode
+    	}
+
+    	val c = getCode
+
+    	// map the short code to the UUID
+    	Cache.set(session_id, c, 600)
+    	Cache.set(c, session_id, 600)
     }
-
-    val code = getCode
-
-    // map the short code to the UUID
-    Cache.set(uuid, code, 600)
-    Cache.set(code, uuid, 600)
-
+    
     // store the items and prices in the Cache
   	
     // return the image to render.
   	val qrUrl = BASE_QR_URL + code
     println("Request:" + request.body)
-    Ok(Json.obj( "url" ->  qrUrl)).withSession(request.session + ("session" -> uuid))
+    Ok(Json.obj( "url" ->  qrUrl)).withSession(request.session)
   }
 
   def listen = Action { request =>
