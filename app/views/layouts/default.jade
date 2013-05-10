@@ -19,6 +19,7 @@ head
   script(type="text/javascript" src={ assets + "javascripts/jquery-1.9.0.min.js"})
   script(type="text/javascript" src={ assets + "bootstrap/js/bootstrap.min.js"})
   script(type="text/javascript" src={ assets + "javascripts/simpleCart.min.js"})
+  script(type="text/javascript" src={ assets + "javascripts/gregsts.min.js"})
   :javascript
     simpleCart({
       cartColumns: [
@@ -34,7 +35,7 @@ head
 
       checkout: {
         type: "SendForm",
-        url: "http://localhost:9000/checkout"
+        url: "/checkout"
       },
 
       currency: "CAD",
@@ -58,10 +59,13 @@ head
       $(".cart").fadeOut(100).fadeIn(300);
     });
 
+    simpleCart.bind( "beforeCheckout", function( data ){
+      gregsts.displayCheckout( data );
+      return false;
+    });
+    
     $(document).ready(function() {    
-
         $(".cart").click( function() {
-            console.log("click!!");
             if ( $(".cart-detail").is(":hidden") && (simpleCart.quantity() > 0)) {
                 $(".cart-detail").show();
             }

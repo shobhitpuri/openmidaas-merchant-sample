@@ -17,14 +17,38 @@
 package controllers
 
 import play.api._
+import play.api.cache.Cache
+import play.api.Play.current
 import play.api.libs.json._
 import play.api.mvc._
 
+import redis.clients.jedis.JedisPubSub
+import com.typesafe.plugin.RedisPlugin
+
 object MIDaaSResponse extends Controller {
 
-  def process = Action(parse.json) { request =>
+  def process = Action(parse.urlFormEncoded) { request =>
     println(request.body)
-    Ok
+    val plugin = Play.application.plugin(classOf[RedisPlugin]).get
+    val pool = plugin.sedisPool
+    
+    // check session id
+    val session_id: Option[String] = Option[String](request.body("state").head)
+    if (None == session_id)
+    {
+      BadRequest("missing session")
+    }
+    else
+    {
+    	val sid = Cache.getAs[String](session_id.get) getOrElse { BadRequest("invalid session") } 
+    	Cache.set( session_id + ".attr", Option[String](request.body("attr").head) getOrElse "")
+    	// Redis Publish
+    	pool.withJedisClient{ client =>
+    		client.publish(session_id.get, "done")
+    	}
+    
+    	Ok
+    }
   }
 
 }

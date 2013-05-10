@@ -18,50 +18,137 @@ package controllers
 
 import java.util.UUID
 
+import scala.concurrent.duration._
+import scala.concurrent.ExecutionContext
+import scala.util.Random
+
 import play.api._
 import play.api.Play.current
 import play.api.cache.Cache
+import play.api.libs.concurrent._
+import play.api.libs.concurrent.Execution.Implicits._
+import play.api.libs.{ EventSource }
+import play.api.libs.iteratee._
+import play.api.libs.json._
 import play.api.mvc._
 
-import scala.util.Random
+
+import libs.concurrent.Akka
+
+import concurrent.duration.Duration
+import concurrent.Future
+import concurrent.Promise
+import concurrent.Await
+
+import redis.clients.jedis.JedisPubSub
+import com.typesafe.plugin.RedisPlugin
+
 
 object Application extends Controller {
   
-  def index = Action {
+
+  def index = Action { request =>
     Cache.set("mykey", "My value")
-    val s = Cache.getAs[String]("mykey")
+    val s = Cache.getAs[String]("mykey2")
     Logger.info("Value retrieved from Cache: %s".format(s))
     
-    Ok(Scalate("index.jade").render())
+    Ok(Scalate("index.jade").render()).withSession(request.session)
   }
 
   // creates a new checkout session
   def checkout = Action { request =>
-  	val uuid = UUID.randomUUID().toString()
+    val BASE_QR_URL = "https://qrcode.kaywa.com/img.php?s=8&t=p&d=https%3A%2F%2Fmidaas-merchant.securekeylabs.com%2Fr%2F"
+    val uuid = UUID.randomUUID().toString()
     
     def getCode: String = {
   	  val c = Random.alphanumeric.take(5).mkString
-      if (Cache.getAs[String](c) == None) c
+      if (Cache.get(c) == None) c
       else getCode
     }
 
     val code = getCode
 
-  	// map the short code to the UUID
-  	Cache.set(uuid, code, 600)
-  	Cache.set(code, uuid, 600)
+    // map the short code to the UUID
+    Cache.set(uuid, code, 600)
+    Cache.set(code, uuid, 600)
 
-  	// store the items and prices in the Cache
+    // store the items and prices in the Cache
   	
-  	// return the image to render.
-  	
+    // return the image to render.
+  	val qrUrl = BASE_QR_URL + code
     println("Request:" + request.body)
-  	Ok
+    Ok(Json.obj( "url" ->  qrUrl)).withSession(request.session + ("session" -> uuid))
   }
+
+  def listen = Action { request =>
+  	val plugin = Play.application.plugin(classOf[RedisPlugin]).get
+    val pool = plugin.sedisPool
+
+    val session_id = request.session.get("session").getOrElse { 
+  		println("missing session")
+  	    BadRequest("missing session") 
+  	  }
+    
+    val redisPromise:Promise[Option[String]] = Promise()
+    val listener = new MyListener(redisPromise)
+    Future { 
+      pool.withJedisClient{ client =>
+      	client.subscribe(listener, session_id.toString)
+  	    println("\nsubscribe returned\n")
+  	  }
+    }(Contexts.myExecutionContext)
+
+  	val myAlert = 
+ 	  Enumerator.generateM {
+  		if (redisPromise.isCompleted) Future.successful(None)
+  		else redisPromise.future
+  	}
+  	    
+    Ok.feed(Enumerator(":" + new String().padTo(2049, ' ') + "\nretry: 2000\n") andThen myAlert &> EventSource())
+      .as("text/event-stream")
+      .withHeaders("Cache-Control" -> "no-cache", "Access-Control-Allow-Origin" -> "*")
+   }
 
   def fulfill = Action { request =>
-    Ok
+    Ok("You are fulfilled")
   }
-  
+
 }
+
+// Execution context used to avoid blocking on subscribe
+object Contexts {
+  implicit val myExecutionContext: ExecutionContext = Akka.system.dispatchers.lookup("akka.actor.redis-pubsub-context")
+}
+
+/* Subscribe class*/
+case class MyListener(p: Promise[Option[String]]) extends JedisPubSub {
+  val promise: Promise[Option[String]] = p
+  
+  def onMessage(channel: String, message: String): Unit = {
+    Logger.info("onMessage[%s, %s]".format(channel, message))
+    promise.success(Some(message))
+    unsubscribe
+  }
+
+  def onSubscribe(channel: String, subscribedChannels: Int): Unit = {
+    Logger.info("onSubscribe[%s, %d]".format(channel, subscribedChannels))
+  }
+
+  def onUnsubscribe(channel: String, subscribedChannels: Int): Unit = {
+    Logger.info("onUnsubscribe[%s, %d]".format(channel, subscribedChannels))
+  }
+
+  def onPSubscribe(pattern: String, subscribedChannels: Int): Unit = {
+    Logger.info("onPSubscribe[%s, %d]".format(pattern, subscribedChannels))
+  }
+
+  def onPUnsubscribe(pattern: String, subscribedChannels: Int): Unit = {
+    Logger.info("onPUnsubscribe[%s, %d]".format(pattern, subscribedChannels))
+  }
+
+  def onPMessage(pattern: String, channel: String, message: String): Unit = {
+    Logger.info("onPMessage[%s, %s, %s]".format(pattern, channel, message))
+  }
+}
+
 

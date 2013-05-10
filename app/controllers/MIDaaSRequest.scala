@@ -17,10 +17,11 @@
 package controllers
 
 import play.api._
-import play.api.mvc._
+import play.api.cache.Cache
 import play.api.libs.json._
 import play.api.libs.functional.syntax._
-
+import play.api.mvc._
+import play.api.Play.current
 
 
 object MIDaaSRequest extends Controller {
@@ -28,24 +29,30 @@ object MIDaaSRequest extends Controller {
   
   // return a MIDaaS request object for the session 
   def process(id: String) = Action { request =>
-    val session_id = "doom"    // lookup session_id from Cache
-    val req:JsValue = Json.obj(
-        "client_id" -> CLIENT_ID,
-        "acr" -> 1,
-        "attrs" -> Json.obj(
-            "email" -> Json.obj("essential" -> true, "verified" -> true),
-            "shipping_address" -> Json.obj("type" -> "address", "label" -> "Shipping Address"),
-            "credit_card" -> Json.obj("label" -> "Credit Card")
-         ),
-         "state" -> Json.obj( "session_id" -> session_id),
-         "return" -> Json.obj(
-             "method" -> "postback",
-             "url" -> ("https://midaas-merchant.securekeylabs.com/postback") // postback url from config
-         )
-        
-     )
+    val session_id = Cache.getAs[String](id)
+    
+    if (None == session_id) {
+      BadRequest("unknown id")
+    }
+    else
+    {
+    	val req:JsValue = Json.obj(
+    			"client_id" -> CLIENT_ID,
+    			"acr" -> 1,
+    			"attrs" -> Json.obj(
+    					"email" -> Json.obj("essential" -> true, "verified" -> true),
+    					"shipping_address" -> Json.obj("type" -> "address", "label" -> "Shipping Address"),
+    					"credit_card" -> Json.obj("label" -> "Credit Card")
+    			),
+    			"state" -> session_id,
+    			"return" -> Json.obj(
+    					"method" -> "postback",
+    					"url" -> ("https://midaas-merchant.securekeylabs.com/postback") // postback url from config
+    			)
+    	)
          
-    Ok(req)  
+    	Ok(req)
+    }
   }
 
 }
