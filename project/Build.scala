@@ -66,7 +66,7 @@ object ApplicationBuild extends Build {
   )
 
   val main = play.Project(appName, appVersion, appDependencies,
-      settings = Defaults.defaultSettings ++ buildInfoSettings ++ publishSettings ++ aetherSettings).settings(
+      settings = Defaults.defaultSettings ++ buildInfoSettings ++ /* publishSettings ++ */ aetherSettings).settings(
       resolvers += "org.sedis" at "http://pk11-scratch.googlecode.com/svn/trunk"
     ).settings(
       sourceGenerators in Compile <+= buildInfo,

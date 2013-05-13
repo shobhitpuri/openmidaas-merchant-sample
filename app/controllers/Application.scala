@@ -52,11 +52,10 @@ object Application extends Controller {
     	val uuid = UUID.randomUUID().toString()
     	Cache.set(uuid, "", 600)  
     	Logger.info("New Session: %s".format(uuid))
-    	request.session + ("session" -> uuid)
     	uuid
     } 
         
-    Ok(Scalate("index.jade").render()).withSession(request.session)
+    Ok(Scalate("index.jade").render()).withSession(request.session + ("session" -> s))
   }
 
   // creates a new checkout session

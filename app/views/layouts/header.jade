@@ -25,8 +25,6 @@
           .row.cart-detail.hide
             .simpleCart_items
           .row.checkout-row
-            .btn-group.pull-right
-              a.btn.btn-success.simpleCart_checkout.dropdown-toggle(data-toggle="dropdown" href="#") Checkout
-              ul.dropdown-menu.pull-right
-                li 
-                  div#checkout
+            .dropdown.pull-right
+              a.btn.btn-success.pull-right#checkout-btn(href="#" style="margin-right:3px;") Checkout
+              div.dropdown-menu.pull-right#checkout

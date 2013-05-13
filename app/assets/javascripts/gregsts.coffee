@@ -8,7 +8,8 @@ class gregsts
   constructor: ->
     me = this
 
-  displayCheckout: (cart_data) ->
+  displayCheckout: (cart_data) ->      
+    $('#checkout').show()	
     $('#checkout').empty().append('Processing')
     request = $.post '/checkout', cart_data
     request.done (data) ->
@@ -37,8 +38,8 @@ class gregsts
       open_cb = (e) ->
       	console?.log 'opened new connection'
       error_cb = (e) ->
-        console.log "error"
-        console.log e
+        console?.log "error"
+        console?.log e
         if e.readyState == EventSource.CLOSED
           console?.log "closed"
         else
@@ -52,6 +53,11 @@ class gregsts
       source.addEventListener 'error', error_cb , false
 
   hideCheckout: ->
-    true
+    $('#checkout').hide()
+    if source? and source.readyState != EventSource.CLOSED
+        console?.log 'killing connection'
+    	source?.close()
+    	source = null
+	
 
 root.gregsts = new gregsts
