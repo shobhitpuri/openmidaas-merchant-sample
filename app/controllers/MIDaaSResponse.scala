@@ -16,11 +16,15 @@
 
 package controllers
 
+import java.util.Arrays
+import org.apache.commons.codec.binary.Base64
+
 import play.api._
 import play.api.cache.Cache
-import play.api.Play.current
+import play.api.libs.iteratee._
 import play.api.libs.json._
 import play.api.mvc._
+import play.api.Play.current
 
 import redis.clients.jedis.JedisPubSub
 import com.typesafe.plugin.RedisPlugin
@@ -28,26 +32,35 @@ import com.typesafe.plugin.RedisPlugin
 object MIDaaSResponse extends Controller {
 
   def process = Action(parse.urlFormEncoded) { request =>
-    println(request.body)
     val plugin = Play.application.plugin(classOf[RedisPlugin]).get
     val pool = plugin.sedisPool
-    
+
     // check session id
-    val session_id: Option[String] = Option[String](request.body("state").head)
-    if (None == session_id)
-    {
-      BadRequest("missing session")
-    }
-    else
-    {
-    	val sid = Cache.getAs[String](session_id.get) getOrElse { BadRequest("invalid session") } 
-    	Cache.set( session_id + ".attr", Option[String](request.body("attr").head) getOrElse "")
-    	// Redis Publish
-    	pool.withJedisClient{ client =>
-    		client.publish(session_id.get, "done")
-    	}
+    val session_id: String = (request.body("state").head)
+    val sid = Cache.getAs[String](session_id).getOrElse { Done(BadRequest("invalid session")) }
+   	val attrJWT:String = (request.body("attr").head)
+   	val payloadb64 = attrJWT.split("\\.",3)(1)
+   	try { 
+   	  val payload: String = new String( Base64.decodeBase64(payloadb64.getBytes()))    	
+      Logger.info( "------PAYLOAD:------")
+      Logger.info ((payload))
+      Logger.info( "------PAYLOAD.------")
+
+      // verify issuer and audience
+    	  
+      Cache.set( session_id + ".attr", payload)
+      Cache.set( session_id, "fulfilled")
+
+      // Redis Publish
+      pool.withJedisClient{ client =>
+        Logger.info("firing event for " + session_id)
+        client.publish(session_id, "done")
+      }
     
-    	Ok
+      Ok
+   	} catch {
+   	  case je: org.codehaus.jackson.JsonParseException => Logger.warn(je.toString); BadRequest("malformed JSON")
+      case e:Throwable => Logger.warn(e.toString); BadRequest("invalid format")
     }
   }
 

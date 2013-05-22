@@ -55,15 +55,6 @@ head
       beforeRemove    : null
     });
     
-    //simpleCart.bind( "beforeAdd", function( item ){
-    //  $(".cart").fadeOut(100);
-    //});
-
-    //simpleCart.bind( "beforeCheckout", function( data ){
-    //  gregsts.displayCheckout( data );  
-    //  return false;
-    //});
-    
     $(document).ready(function() {    
       $("#checkout").hide();
     });
@@ -100,3 +91,7 @@ body
       gregsts.hideCheckout();
     }
   });
+  
+  $(window).onbeforeunload = function() {
+  	gregsts.ignore();
+  };

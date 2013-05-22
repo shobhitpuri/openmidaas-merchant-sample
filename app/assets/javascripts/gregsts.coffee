@@ -14,9 +14,9 @@ class gregsts
     request = $.post '/checkout', cart_data
     request.done (data) ->
       img = $ '<img />'
-      img.attr 'src', data.url
+      img.attr 'src', data.img_url
       $('#checkout').empty().append(img)
-      me.listen '/listen'
+      console?.log(data.url)
 
     request.fail (jqXHR, status) ->
       $('#checkout').empty.append('error processing checkout')
@@ -33,8 +33,11 @@ class gregsts
           console.log e.data
           source.close()
           document.location.href = '/fulfill'
+        if e.data == "'expired'"
+          console.log e.data
+          source.close()
+          me.listen(url)
           
-
       open_cb = (e) ->
       	console?.log 'opened new connection'
       error_cb = (e) ->
@@ -45,19 +48,20 @@ class gregsts
         else
           source.close()
       	
-
       source.addEventListener 'message', msg_cb, false
-
       source.addEventListener 'open', open_cb, false
- 
       source.addEventListener 'error', error_cb , false
+
+  ignore: ->
+    if source? and source.readyState != EventSource.CLOSED
+      console?.log 'killing connection'
+      source?.close()
+      source = null
+  
 
   hideCheckout: ->
     $('#checkout').hide()
-    if source? and source.readyState != EventSource.CLOSED
-        console?.log 'killing connection'
-    	source?.close()
-    	source = null
-	
+
+  	
 
 root.gregsts = new gregsts

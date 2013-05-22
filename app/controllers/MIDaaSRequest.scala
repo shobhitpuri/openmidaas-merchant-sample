@@ -34,6 +34,9 @@ object MIDaaSRequest extends Controller {
     if (None == session_id) {
       BadRequest("unknown id")
     }
+    else if ("fulfilled" == session_id.get) {
+      BadRequest("already fulfilled") 
+    }
     else
     {
     	val req:JsValue = Json.obj(
@@ -42,7 +45,8 @@ object MIDaaSRequest extends Controller {
     			"attrs" -> Json.obj(
     					"email" -> Json.obj("essential" -> true, "verified" -> true),
     					"shipping_address" -> Json.obj("type" -> "address", "label" -> "Shipping Address"),
-    					"credit_card" -> Json.obj("label" -> "Credit Card")
+    					"credit_card" -> Json.obj("label" -> "Credit Card"),
+    					"billing_address" -> Json.obj("label" -> "Billing Address")
     			),
     			"state" -> session_id,
     			"return" -> Json.obj(

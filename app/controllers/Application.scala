@@ -16,6 +16,7 @@
 
 package controllers
 
+import java.net.URLEncoder
 import java.util.UUID
 
 import scala.concurrent.duration._
@@ -47,26 +48,36 @@ import com.typesafe.plugin.RedisPlugin
 object Application extends Controller {
   
 
+  var eventSources:Map[String, Enumeratee[String, String]] = Map()
+  
   def index = Action { request =>
-    val s:String = request.session.get("session").getOrElse {
+    val sessionFromCookie = request.session.get("session")
+    def getSession(): String = {
+      if (sessionFromCookie == None || Cache.getAs[String](sessionFromCookie.get) == None) {
     	val uuid = UUID.randomUUID().toString()
-    	Cache.set(uuid, "", 600)  
+    	Cache.set(uuid, "shopping", 600)  
     	Logger.info("New Session: %s".format(uuid))
     	uuid
-    } 
-        
-    Ok(Scalate("index.jade").render()).withSession(request.session + ("session" -> s))
+      } else {
+        sessionFromCookie.get
+      }
+    }
+    
+    Ok(Scalate("index.jade").render()).withSession(request.session + ("session" -> getSession))
   }
 
-  // creates a new checkout session
+  /**
+   *  creates a new checkout session by generating a short code and 
+   *  providing a URL to the QR code.
+   */ 
   def checkout = Action { request =>
-    val BASE_QR_URL = "https://qrcode.kaywa.com/img.php?s=8&t=p&d=https%3A%2F%2Fmidaas-merchant.securekeylabs.com%2Fr%2F"
+    val BASE_URL = "https://midaas-merchant.securekeylabs.com/r/"
+    val BASE_QR_URL = "https://qrcode.kaywa.com/img.php?s=8&t=p&d="
     
     val session_id: String = request.session.get("session").getOrElse { throw new Exception("missing session")}  
     
-    val code: Option[String] = Cache.getAs[String](session_id) 
-    if (code.isEmpty)
-    {
+    val sessionState = Cache.getAs[String](session_id).getOrElse{ Logger.warn("expired session, refresh"); Done(Redirect("/")) }
+    val code: String = Cache.getAs[String](session_id + ".shortcode").getOrElse {
     	def getCode: String = {
   	  		val c = Random.alphanumeric.take(5).mkString
   	  		if (Cache.get(c) == None) c
@@ -76,49 +87,77 @@ object Application extends Controller {
     	val c = getCode
 
     	// map the short code to the UUID
-    	Cache.set(session_id, c, 600)
+    	Cache.set(session_id + ".shortcode", c, 600)
     	Cache.set(c, session_id, 600)
+    	Logger.info(" generated short code[" + c + "] for session " + session_id)
+    	c
     }
     
     // store the items and prices in the Cache
-  	
+  	assert(! code.isEmpty )
     // return the image to render.
-  	val qrUrl = BASE_QR_URL + code
-    println("Request:" + request.body)
-    Ok(Json.obj( "url" ->  qrUrl)).withSession(request.session)
+  	val url = BASE_URL + code
+    val qrUrl = BASE_QR_URL + URLEncoder.encode(url, "UTF-8") 
+    Ok(Json.obj( "url" ->  url, "img_url" -> qrUrl)).withSession(request.session)
   }
 
+  
+  /**
+   * Client will attach an EventSource to listen for out-of-band events
+   */
   def listen = Action { request =>
   	val plugin = Play.application.plugin(classOf[RedisPlugin]).get
     val pool = plugin.sedisPool
 
-    val session_id = request.session.get("session").getOrElse { 
-  		println("missing session")
-  	    BadRequest("missing session") 
+    val session_id: String = request.session.get("session").getOrElse { throw new Exception("missing session") }
+    val sessionState: String = Cache.getAs[String](session_id).getOrElse { throw new Exception("session expired") }
+  	
+  	val eventSource = eventSources.get(session_id) match {
+  	  case Some(es) => es
+  	  case None => {
+  	    Logger.info("Creating Event Source for session: " + session_id)
+  	    val newES = EventSource[String]()
+  	    this.eventSources = this.eventSources + (session_id -> newES) 
+  	    newES
   	  }
+  	}
     
     val redisPromise:Promise[Option[String]] = Promise()
     val listener = new MyListener(redisPromise)
-    Future { 
+    val redisFuture = Future { 
       pool.withJedisClient{ client =>
-      	client.subscribe(listener, session_id.toString)
-  	    println("\nsubscribe returned\n")
+        Logger.info("subscribing to: " + session_id)
+        client.subscribe(listener, session_id)
   	  }
     }(Contexts.myExecutionContext)
-
+    val timeoutFuture = play.api.libs.concurrent.Promise.timeout("expired", 5.minutes)
+    timeoutFuture.onComplete {
+      case t => redisPromise.success(Some("expired"))
+    }
+    
   	val myAlert = 
  	  Enumerator.generateM {
-  		if (redisPromise.isCompleted) Future.successful(None)
-  		else redisPromise.future
+  		if (redisPromise.isCompleted) {
+  		  // terminate the enumeratee and remove from the map
+  		  Logger.info("Removing Event Source for session:" + session_id)
+  		  this.eventSources = this.eventSources - (session_id)
+  		  Future.successful(None)
+  		}
+  		else {
+  		  redisPromise.future
+  		}
   	}
-  	    
-    Ok.feed(Enumerator(":" + new String().padTo(2049, ' ') + "\nretry: 2000\n") andThen myAlert &> EventSource())
+  	
+  	
+  	myAlert.onDoneEnumerating( () => Logger.warn("\n **** Done Enumerating!! *** \n") )
+  	
+  	Ok.feed(Enumerator(":" + new String().padTo(2049, ' ') + "\nretry: 2000\n") andThen myAlert &> eventSource)
       .as("text/event-stream")
       .withHeaders("Cache-Control" -> "no-cache", "Access-Control-Allow-Origin" -> "*")
    }
 
   def fulfill = Action { request =>
-    Ok("You are fulfilled")
+    Ok(Scalate("fulfill.jade").render())
   }
 
 }
