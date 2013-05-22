@@ -132,7 +132,8 @@ object Application extends Controller {
     }(Contexts.myExecutionContext)
     val timeoutFuture = play.api.libs.concurrent.Promise.timeout("expired", 5.minutes)
     timeoutFuture.onComplete {
-      case t => redisPromise.success(Some("expired"))
+      case t => if (redisPromise.isCompleted) redisPromise 
+                else redisPromise.success(Some("expired"))
     }
     
   	val myAlert = 

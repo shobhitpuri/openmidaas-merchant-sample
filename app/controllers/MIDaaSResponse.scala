@@ -39,19 +39,20 @@ object MIDaaSResponse extends Controller {
     val session_id: String = (request.body("state").head)
     val sid = Cache.getAs[String](session_id).getOrElse { Done(BadRequest("invalid session")) }
    	val attrJWT:String = (request.body("attr").head)
-   	val payloadb64 = attrJWT.split("\\.",3)(1)
+   	val payloadb64 = attrJWT.split("\\.",3)
    	try { 
-   	  val payload: String = new String( Base64.decodeBase64(payloadb64.getBytes()))    	
-      Logger.info( "------PAYLOAD:------")
-      Logger.info ((payload))
-      Logger.info( "------PAYLOAD.------")
-
-      // verify issuer and audience
+   	  if (payloadb64.length > 2) {
+   	      val payload: String = new String( Base64.decodeBase64(payloadb64(1).getBytes()))    	
+   	      Logger.info( "------PAYLOAD:------")
+   	      Logger.info ((payload))
+   	      Logger.info( "------PAYLOAD.------")
+   	      // verify issuer and audience
     	  
-      Cache.set( session_id + ".attr", payload)
-      Cache.set( session_id, "fulfilled")
-
-      // Redis Publish
+   	      Cache.set( session_id + ".attr", payload)
+   	  }
+   	  
+   	  Cache.set( session_id, "fulfilled")
+   	  // Redis Publish
       pool.withJedisClient{ client =>
         Logger.info("firing event for " + session_id)
         client.publish(session_id, "done")
