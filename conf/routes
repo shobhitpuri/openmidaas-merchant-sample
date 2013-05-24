@@ -6,7 +6,7 @@
 GET     /                           controllers.Application.index
 GET     /fulfill                    controllers.Application.fulfill
 POST    /checkout                   controllers.Application.checkout
-GET     /listen                     controllers.Application.listen
+GET     /listen                     controllers.LiveListen.listen
 
 # MIDaaS endpoints
 GET     /r/:id                      controllers.MIDaaSRequest.process(id)

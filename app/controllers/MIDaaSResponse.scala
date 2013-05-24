@@ -54,8 +54,8 @@ object MIDaaSResponse extends Controller {
    	  Cache.set( session_id, "fulfilled")
    	  // Redis Publish
       pool.withJedisClient{ client =>
-        Logger.info("firing event for " + session_id)
-        client.publish(session_id, "done")
+        Logger.info("firing event for mevent:" + session_id)
+        client.publish("mevent", session_id)
       }
     
       Ok
