@@ -32,7 +32,7 @@ import libs.concurrent.Akka
 import akka.pattern.ask
 import akka.util.Timeout
 
-import concurrent.duration.Duration
+import concurrent.duration._
 import concurrent.Future
 import concurrent.Promise
 import concurrent.Await
@@ -61,7 +61,7 @@ object LiveListen extends Controller {
       val session_id: String = request.session.get("session").getOrElse { throw new Exception("missing session") }
       val sessionState: String = Cache.getAs[String](session_id).getOrElse { throw new Exception("session expired") }
     
-      val timeoutFuture = play.api.libs.concurrent.Promise.timeout("expired", 5.minutes)
+      val timeoutFuture = play.api.libs.concurrent.Promise.timeout("expired", 15.minutes)
       timeoutFuture.onComplete {
         case t => Listeners.notifier ! Terminate(session_id)
       }

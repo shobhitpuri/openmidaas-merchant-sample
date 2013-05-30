@@ -26,6 +26,8 @@ import play.api.libs.json._
 import play.api.mvc._
 import play.api.Play.current
 
+import lib.JoseProcessor
+
 import redis.clients.jedis.JedisPubSub
 import com.typesafe.plugin.RedisPlugin
 
@@ -38,20 +40,23 @@ object MIDaaSResponse extends Controller {
     // check session id
     val session_id: String = (request.body("state").head)
     val sid = Cache.getAs[String](session_id).getOrElse { Done(BadRequest("invalid session")) }
-   	val attrJWT:String = (request.body("attr").head)
-   	val payloadb64 = attrJWT.split("\\.",3)
-   	try { 
-   	  if (payloadb64.length > 2) {
-   	      val payload: String = new String( Base64.decodeBase64(payloadb64(1).getBytes()))    	
-   	      Logger.info( "------PAYLOAD:------")
-   	      Logger.info ((payload))
-   	      Logger.info( "------PAYLOAD.------")
-   	      // verify issuer and audience
-    	  
-   	      Cache.set( session_id + ".attr", payload)
-   	  }
+   	
+  
+    try { 
+      // parse data from JWTs.
+      val vattr = request.body.get("vattr") match {
+        case Some(vjws) =>JoseProcessor.getJWSData(vjws.head)
+        case None => ""
+      }      
+      Logger.info("Verfied Payload: " + vattr)
    	  
-   	  Cache.set( session_id, "fulfilled")
+      val attr = request.body.get("attr") match {
+        case Some(v) => JoseProcessor.getJWTData(v.head)
+        case None => ""
+      }
+      Logger.info("Unverified Payload: " + attr)
+      
+      Cache.set( session_id, "fulfilled")
    	  // Redis Publish
       pool.withJedisClient{ client =>
         Logger.info("firing event for mevent:" + session_id)
@@ -60,7 +65,7 @@ object MIDaaSResponse extends Controller {
     
       Ok
    	} catch {
-   	  case je: org.codehaus.jackson.JsonParseException => Logger.warn(je.toString); BadRequest("malformed JSON")
+   	  case pe: java.text.ParseException => Logger.warn(pe.toString); BadRequest("malformed verifed bundle")
       case e:Throwable => Logger.warn(e.toString); BadRequest("invalid format")
     }
   }
