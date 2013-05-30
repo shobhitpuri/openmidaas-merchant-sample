@@ -47,7 +47,7 @@ object MIDaaSRequest extends Controller {
     					"shipping_address" -> Json.obj("type" -> "address", "label" -> "Shipping Address"),
     					"credit_card" -> Json.obj("label" -> "Credit Card"),
     					"billing_address" -> Json.obj("type" -> "address", "label" -> "Billing Address"),
-    					"phone_number" -> Json.obj("type" -> "phone", "label" -> "Phone No. (optional)", "verified" -> true)
+    					"phone_number" -> Json.obj("label" -> "Phone No. (optional)", "verified" -> true)
     			),
     			"state" -> session_id,
     			"return" -> Json.obj(
