@@ -38,9 +38,9 @@ object JoseProcessor {
   /**
    * @param the base64url encoded JWS
    * @return the JSON payload from a JWS signed with a key specified by a 'jku' and 'kid'.
-   * @throw NotFoundException if the key cannot be retrieved.
-   * @throw MalformedException if it cannot parse the JWS or the header is missing the jku/kid.
-   * @throw SigFailedException if the signature fails.
+   * @throws NotFoundException if the key cannot be retrieved.
+   * @throws MalformedException if it cannot parse the JWS or the header is missing the jku/kid.
+   * @throws SigFailedException if the signature fails.
    */
   def getJWSData(jws: String): JsValue = {
     try {
@@ -74,7 +74,7 @@ object JoseProcessor {
   /**
    * @param jwt the base64url jwt value
    * @return JSON object of the payload
-   * @throw MalformedException if the JWT cannot be parsed
+   * @throws MalformedException if the JWT cannot be parsed
    */
   def getJWTData(jwt:String): JsValue = {
     val jwtObject:PlainJWT = PlainJWT.parse(jwt)

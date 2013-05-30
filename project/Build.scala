@@ -32,7 +32,7 @@ object ApplicationBuild extends Build {
     "org.fusesource.scalate" % "scalate-core_2.10" % "1.6.1",
     "net.minidev" % "json-smart" % "1.1.1",
     "com.typesafe" %% "play-plugins-redis" % "2.1-RC2",
-    "com.nimbusds" % "nimbus-jose-jwt" % "2.16.0"
+    "com.nimbusds" % "nimbus-jose-jwt" % "2.13.0"
   )
 
   lazy val publishSettings = Seq(
