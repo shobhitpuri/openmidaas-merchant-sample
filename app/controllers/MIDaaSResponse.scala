@@ -33,9 +33,10 @@ import com.typesafe.plugin.RedisPlugin
 
 object MIDaaSResponse extends Controller {
 
-  def process = Action(parse.urlFormEncoded) { request =>
     val plugin = Play.application.plugin(classOf[RedisPlugin]).get
     val pool = plugin.sedisPool
+
+  def process = Action(parse.urlFormEncoded) { request =>
 
     // check session id
     val session_id: String = (request.body("state").head)
@@ -44,25 +45,20 @@ object MIDaaSResponse extends Controller {
   
     try { 
       // parse data from JWTs.
-      val vattr = request.body.get("vattr") match {
-        case Some(vjws) =>JoseProcessor.getJWSData(vjws.head)
-        case None => ""
+      val vattr:JsObject = request.body.get("vattr") match {
+        case Some(vjws) => JoseProcessor.getJWSData(vjws.head)
+        case None => JsObject(Nil)
       }      
       Logger.info("Verfied Payload: " + vattr)
    	  
-      val attr = request.body.get("attr") match {
+      val attr:JsObject = request.body.get("attr") match {
         case Some(v) => JoseProcessor.getJWTData(v.head)
-        case None => ""
+        case None => JsObject(Nil)
       }
       Logger.info("Unverified Payload: " + attr)
+
+      processData(session_id, (vattr \ "attr").as[JsObject], (attr \ "attr").as[JsObject])
       
-      Cache.set( session_id, "fulfilled")
-   	  // Redis Publish
-      pool.withJedisClient{ client =>
-        Logger.info("firing event for mevent:" + session_id)
-        client.publish("mevent", session_id)
-      }
-    
       Ok
    	} catch {
    	  case pe: java.text.ParseException => Logger.warn(pe.toString); BadRequest("malformed verifed bundle")
@@ -70,4 +66,27 @@ object MIDaaSResponse extends Controller {
     }
   }
 
+  private def processData(session_id:String, vattr:JsObject, attr:JsObject) = {    
+    // combine JSONs
+    val allAttrs = attr ++ vattr
+    val isEmailVerified =  (vattr \ "email").asOpt[String] match {
+        case Some(e) => true
+        case None => false
+    }
+    
+    allAttrs + ("isEmailVerified", JsBoolean(isEmailVerified))
+    
+    // access Redis directly to store transaction details
+    
+    Cache.set( session_id, "fulfilled")
+    Cache.set( session_id + ".data", allAttrs.toString)
+    // Redis Publish
+    pool.withJedisClient{ client =>
+        Logger.info("firing event for mevent:" + session_id)
+        
+        client.publish("mevent", session_id)
+    }
+  }
+  
+  
 }

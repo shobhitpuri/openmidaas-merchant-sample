@@ -15,7 +15,10 @@ class gregsts
     request.done (data) ->
       img = $ '<img />'
       img.attr 'src', data.img_url
-      $('#checkout').empty().append(img)
+      urltxt = $ '<div />'
+      urltxt.addClass 'alturl'
+      urltxt.text data.url
+      $('#checkout').empty().append(img).append(urltxt).
       console?.log(data.url)
 
     request.fail (jqXHR, status) ->

@@ -42,7 +42,7 @@ object JoseProcessor {
    * @throws MalformedException if it cannot parse the JWS or the header is missing the jku/kid.
    * @throws SigFailedException if the signature fails.
    */
-  def getJWSData(jws: String): JsValue = {
+  def getJWSData(jws: String): JsObject = {
     try {
       // create JWS object from string
       val jwsObject = JWSObject.parse(jws)
@@ -62,10 +62,16 @@ object JoseProcessor {
       // verify JWS
       jwsObject.verify(rsaVerifier)
       
+      // verify audience and exp - TBD
+      
       // create JSON data from payload
-      Json.parse(jwsObject.getPayload.toString)
+      Json.parse(jwsObject.getPayload.toString) match {
+        case j:JsObject => j
+        case _ => throw new MalformedException
+      }
       
     } catch {
+      // convert nimbuds exceptions to local exceptions. TBD
       case e: Throwable => throw e
     }
 
@@ -76,9 +82,12 @@ object JoseProcessor {
    * @return JSON object of the payload
    * @throws MalformedException if the JWT cannot be parsed
    */
-  def getJWTData(jwt:String): JsValue = {
+  def getJWTData(jwt:String): JsObject = {
     val jwtObject:PlainJWT = PlainJWT.parse(jwt)
-    Json.parse(jwtObject.getPayload().toString) 
+    Json.parse(jwtObject.getPayload().toString) match {
+        case j:JsObject => j
+        case _ => throw new MalformedException
+      } 
   }
   
   
