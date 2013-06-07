@@ -38,6 +38,7 @@ object MIDaaSResponse extends Controller {
 
   def process = Action(parse.urlFormEncoded) { request =>
 
+    Logger.info("RESPONSE:\n" + request.body.toString)
     // check session id
     val session_id: String = (request.body("state").head)
     val sid = Cache.getAs[String](session_id).getOrElse { Done(BadRequest("invalid session")) }
@@ -46,38 +47,49 @@ object MIDaaSResponse extends Controller {
     try { 
       // parse data from JWTs.
       val vattr:JsObject = request.body.get("vattr") match {
-        case Some(vjws) => JoseProcessor.getJWSData(vjws.head)
+        case Some(vjws) => Logger.info("vattr: " + vjws); JoseProcessor.getJWSData(vjws.head)
         case None => JsObject(Nil)
       }      
       Logger.info("Verfied Payload: " + vattr)
    	  
       val attr:JsObject = request.body.get("attr") match {
-        case Some(v) => JoseProcessor.getJWTData(v.head)
+        case Some(v) => Logger.info("attr: " + v); JoseProcessor.getJWTData(v.head)
         case None => JsObject(Nil)
       }
       Logger.info("Unverified Payload: " + attr)
 
-      processData(session_id, (vattr \ "attr").as[JsObject], (attr \ "attr").as[JsObject])
+      // TBD a better way sing for composition?
+      processData(session_id, 
+          { (vattr \ "attrs").asOpt[JsObject] match {
+              case Some(j) => j
+              case None => JsObject(Nil)
+            }
+          } , { 
+            (attr \ "attrs").asOpt[JsObject] match{
+              case Some(j) => j
+              case None => JsObject(Nil)
+            } 
+          }, 
+          (vattr \ "sub").as[JsString]
+      )
       
       Ok
    	} catch {
-   	  case pe: java.text.ParseException => Logger.warn(pe.toString); BadRequest("malformed verifed bundle")
-      case e:Throwable => Logger.warn(e.toString); BadRequest("invalid format")
+   	  case pe: java.text.ParseException => Logger.warn(pe.toString); pe.printStackTrace(); BadRequest("malformed verifed bundle")
+      case e:Throwable =>  Logger.warn(e.toString); e.printStackTrace(); BadRequest("invalid format")
     }
   }
 
-  private def processData(session_id:String, vattr:JsObject, attr:JsObject) = {    
+  private def processData(session_id:String, vattr:JsObject, attr:JsObject, sub:JsString) = {    
     // combine JSONs
-    val allAttrs = attr ++ vattr
-    val isEmailVerified =  (vattr \ "email").asOpt[String] match {
-        case Some(e) => true
-        case None => false
+    val allAttrs = (attr ++ vattr) + ("subject", sub) + {
+      (vattr \ "email").asOpt[String] match {
+        case Some(e) => ("isEmailVerified", JsBoolean(true))
+        case None => ("isEmailVerified", JsBoolean(false))
+      }
     }
-    
-    allAttrs + ("isEmailVerified", JsBoolean(isEmailVerified))
-    
-    // access Redis directly to store transaction details
-    
+        
+    Logger.info("processed data: " + allAttrs.toString)    
     Cache.set( session_id, "fulfilled")
     Cache.set( session_id + ".data", allAttrs.toString)
     // Redis Publish

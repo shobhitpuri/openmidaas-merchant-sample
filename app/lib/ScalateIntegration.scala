@@ -4,7 +4,7 @@
  */
 
 
-package controllers
+package lib
 
 import play.api._
 import http.{Writeable, ContentTypeOf, ContentTypes}

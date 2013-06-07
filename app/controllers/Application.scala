@@ -41,10 +41,11 @@ import concurrent.Future
 import concurrent.Promise
 import concurrent.Await
 
+import lib.Scalate
 
 object Application extends Controller {
     
-  def index = Action { request =>
+  def index = Action { implicit request =>
     val sessionFromCookie = request.session.get("session")
     def getSession(): String = {
       if (sessionFromCookie == None || Cache.getAs[String](sessionFromCookie.get) == None) {
@@ -64,14 +65,14 @@ object Application extends Controller {
    *  creates a new checkout session by generating a short code and 
    *  providing a URL to the QR code.
    */ 
-  def checkout = Action { request =>
+  def checkout = Action { implicit request =>
     val BASE_URL = "https://midaas-merchant.securekeylabs.com/r/"
     val BASE_QR_URL = "https://qrcode.kaywa.com/img.php?s=8&t=p&d="
     
     val session_id: String = request.session.get("session").getOrElse { throw new Exception("missing session")}  
     
-    val sessionState = Cache.getAs[String](session_id).getOrElse{ Logger.warn("expired session, refresh"); Done(Redirect("/")) }
-    val code: String = Cache.getAs[String](session_id + ".shortcode").getOrElse {
+    Cache.getAs[String](session_id).map { sessionState => 
+      val code: String = Cache.getAs[String](session_id + ".shortcode").getOrElse {
     	def getCode: String = {
   	  		val c = Random.alphanumeric.take(5).mkString
   	  		if (Cache.get(c) == None) c
@@ -85,22 +86,47 @@ object Application extends Controller {
     	Cache.set(c, session_id, 600)
     	Logger.info(" generated short code[" + c + "] for session " + session_id)
     	c
-    }
+      }
     
-    // store the items and prices in the Cache
-  	assert(! code.isEmpty )
-    // return the image to render.
-  	val url = BASE_URL + code
-    val qrUrl = BASE_QR_URL + URLEncoder.encode(url, "UTF-8") 
-    Ok(Json.obj( "url" ->  url, "img_url" -> qrUrl)).withSession(request.session)
+      // store the items and prices in the Cache
+  	  assert(! code.isEmpty )
+      // return the image to render.
+  	  val url = BASE_URL + code
+      val qrUrl = BASE_QR_URL + URLEncoder.encode(url, "UTF-8") 
+      Ok(Json.obj( "url" ->  url, "img_url" -> qrUrl)).withSession(request.session)
+    }.getOrElse { 
+      Logger.warn("expired session, refresh"); 
+      Redirect("/") 
+    }
   }
 
 
   /**
    * render the fulfillment page
    */
-  def fulfill = Action { request =>
-    Ok(Scalate("fulfill.jade").render())
+  def fulfill = Action { implicit request =>
+    
+    val session_id: String = request.session.get("session").getOrElse { throw new Exception("missing session")}  
+    Cache.getAs[String](session_id).map { sessionState => 
+      Cache.getAs[String](session_id + ".data").map { sessionData =>
+          Logger.info(sessionData)
+          val data = Json.parse(sessionData)
+          
+          // extract data into vals for rendering.
+          val email:String = (data \ "email").asOpt[String].getOrElse { "" }
+          //val shipping_adress = data \ "shipping_address"
+          //val billing_address = data \ "billing_address"
+          //val credit_card = data \ "credit_card"
+          //val phone_number = data \ "phone_number"
+          
+          Ok(Scalate("fulfill.jade").render('email -> email))
+      }.getOrElse { 
+          BadRequest("Payment Data Not Available") 
+      }
+    }.getOrElse { 
+      Logger.warn("expired session, refresh"); 
+      BadRequest("Session Expired")
+    }
   }
 
 }
