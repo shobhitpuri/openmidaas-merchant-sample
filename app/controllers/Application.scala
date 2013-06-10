@@ -42,6 +42,7 @@ import concurrent.Promise
 import concurrent.Await
 
 import lib.Scalate
+import model._
 
 object Application extends Controller {
     
@@ -111,15 +112,9 @@ object Application extends Controller {
       Cache.getAs[String](session_id + ".data").map { sessionData =>
           Logger.info(sessionData)
           val data = Json.parse(sessionData)
+          val customer = Json.fromJson[Customer](data).map { c => c }.recoverTotal{ e => Logger.warn(e.toString); throw new Exception("bad data");}
           
-          // extract data into vals for rendering.
-          val email:String = (data \ "email").asOpt[String].getOrElse { "" }
-          //val shipping_adress = data \ "shipping_address"
-          //val billing_address = data \ "billing_address"
-          //val credit_card = data \ "credit_card"
-          //val phone_number = data \ "phone_number"
-          
-          Ok(Scalate("fulfill.jade").render('email -> email))
+          Ok(Scalate("fulfill.jade").render('customer -> customer))
       }.getOrElse { 
           BadRequest("Payment Data Not Available") 
       }

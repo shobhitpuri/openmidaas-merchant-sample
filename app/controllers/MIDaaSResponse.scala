@@ -27,6 +27,7 @@ import play.api.mvc._
 import play.api.Play.current
 
 import lib.JoseProcessor
+import model._
 
 import redis.clients.jedis.JedisPubSub
 import com.typesafe.plugin.RedisPlugin
@@ -47,18 +48,24 @@ object MIDaaSResponse extends Controller {
     try { 
       // parse data from JWTs.
       val vattr:JsObject = request.body.get("vattr") match {
-        case Some(vjws) => Logger.info("vattr: " + vjws); JoseProcessor.getJWSData(vjws.head)
+        case Some(vjws) => Logger.info("vattr: " + vjws); vjws.headOption match {
+          case Some(actualvjws) => JoseProcessor.getJWSData(vjws.head)
+          case None => JsObject(Nil)
+        }
         case None => JsObject(Nil)
       }      
       Logger.info("Verfied Payload: " + vattr)
    	  
       val attr:JsObject = request.body.get("attr") match {
-        case Some(v) => Logger.info("attr: " + v); JoseProcessor.getJWTData(v.head)
+        case Some(v) => Logger.info("attr: " + v); v.headOption match {
+          case Some(actualvalue) => JoseProcessor.getJWTData(actualvalue)
+          case None => JsObject(Nil)
+        }
         case None => JsObject(Nil)
       }
       Logger.info("Unverified Payload: " + attr)
 
-      // TBD a better way sing for composition?
+      // determine if the object has an 'attr' field.
       processData(session_id, 
           { (vattr \ "attrs").asOpt[JsObject] match {
               case Some(j) => j
@@ -89,6 +96,10 @@ object MIDaaSResponse extends Controller {
       }
     }
         
+    // test we can parse it into a Customer object...
+    (Json.fromJson[Customer](allAttrs)).map { c =>
+    }.recoverTotal (e => Logger.error(e.toString))
+    
     Logger.info("processed data: " + allAttrs.toString)    
     Cache.set( session_id, "fulfilled")
     Cache.set( session_id + ".data", allAttrs.toString)

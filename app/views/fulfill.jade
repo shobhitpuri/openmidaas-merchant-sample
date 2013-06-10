@@ -1,5 +1,6 @@
 -@ val assets:String = "/assets/"
--@ val email:String
+- import model._
+-@ val customer:Customer
 
 :javascript
   $(document).ready( function() {
@@ -13,7 +14,39 @@
       em your purchase 
 .row
   .span3.sidebar
+    - customer.creditCard.map { cc =>
+    h4 Credit Card:
+    p 
+    | #{cc.cardNo}
+    br
+    | #{cc.cardHolderName}
+    br
+    | #{cc.expYear} / #{cc.expMonth}
+    - }
+    - customer.shippingAddr.map { addr =>
+    h4 Shipping Address
+    p
+    | #{addr.street}
+    br
+    | #{addr.region}, #{addr.country}
+    br
+    | #{addr.code}
+    - }
+    - customer.phone.map { phone =>
+    h4 Phone Number
+    p #{phone}
+    - }
   .span8.pull-right
-    p Thank-you for your purchase, #{email}
+    p If this information is correct, click Proceed. 
+    p Your credit card will be charged, and a confirmation email sent to 
+    - if (customer.isEmailVerified) { 
+      span(style="color: green") #{customer.email}
+    - } else {
+      span(style="color: red") #{customer.email}
+    - }
+    p and the items shipped to the specified address.
+    p Thank-you for your business!
+    p
+      a(href="#") Proceed
 
     
