@@ -20,6 +20,7 @@ import play.api.libs.json._
 import play.api.libs.functional.syntax._
 
 case class Address(
+    formatted: String,
     street:    String,
     region:    String,
     locality:  String,
@@ -28,21 +29,23 @@ case class Address(
 )
 object Address {
   implicit val addressReads = (
-    ( __ \ "streetAddress").read[String] and
+    ( __ \ "formatted").read[String] and
+    ( __ \ "street_address").read[String] and
     ( __ \ "region").read[String] and
     ( __ \ "locality").read[String] and
     ( __ \ "country").read[String] and
-    ( __ \ "postalCode" ).read[String]
+    ( __ \ "postal_code" ).read[String]
   )(Address.apply _)
   
   implicit val addressWrites = new Writes[Address] {
     def writes(addr: Address) : JsValue = {
       Json.obj(
-        "streetAddress" -> addr.street,
+        "formatted" -> addr.formatted,  
+        "street_address" -> addr.street,
         "region" -> addr.region,
         "locality" -> addr.locality,
         "country" -> addr.country,
-        "postalCode" -> addr.code
+        "postal_code" -> addr.code
       )
     }  
   }
@@ -51,30 +54,27 @@ object Address {
 case class CreditCard(
     typ:             Option[String],
     cardNo:          String,
-    expYear:         String,
-    expMonth:        String,
+    exp:             String,
     cardHolderName:  String, 
     secure:          Option[String]
 )
 object CreditCard {
   implicit val creditCardReads = (
       ( __ \ "type" ).readNullable[String] and
-      ( __ \ "creditCard" ).read[String] and
-      ( __ \ "expiryYear" ).read[String] and
-      ( __ \ "expiryMonth").read[String] and
-      ( __ \ "cardHolderName").read[String] and
-      ( __ \ "cardCvv").readNullable[String]
+      ( __ \ "card_no" ).read[String] and
+      ( __ \ "exp" ).read[String] and
+      ( __ \ "card_name").read[String] and
+      ( __ \ "3d_secure").readNullable[String]
   )(CreditCard.apply _)
   
   implicit val creditCardWrites = new Writes[CreditCard] {
     def writes(cc: CreditCard) : JsValue = {
       Json.obj(
         "type" -> cc.typ,
-        "creditCard" -> cc.cardNo,
-        "expYear" -> cc.expYear,
-        "expMonth" -> cc.expMonth,
-        "cardHolderName" -> cc.cardHolderName,
-        "cardCvv" -> cc.secure
+        "card_no" -> cc.cardNo,
+        "exp" -> cc.exp,
+        "card_name" -> cc.cardHolderName,
+        "3d_secure" -> cc.secure
       )
     }
   }

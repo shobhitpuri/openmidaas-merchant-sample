@@ -55,7 +55,6 @@ object MyRedisSubscriber {
   }
   
   val redisFuture = Future {
-    Logger.info("\n ** ITS HAPPENENING ** \n")
     pool.withJedisClient{ client =>
       Logger.info("subscribing to: " + mobileChan)
       client.subscribe(listener, mobileChan)

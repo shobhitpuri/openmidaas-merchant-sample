@@ -3,6 +3,39 @@
 -@ val customer:Customer
 
 :javascript
+  
+  simpleCart({
+      cartColumns: [
+        { attr: "name", label: "Item"},
+        { view: "currency", attr: "price", label: "Price" },
+        { attr: "quantity", label: "Qty"},
+        { view: "currency", attr: "total", label: "SubTotal" },
+      ],
+
+      cartStyle: "div",
+
+      checkout: {
+        type: "SendForm",
+        url: "/checkout"
+      },
+
+      currency: "CAD",
+
+      language: "english-us",
+
+      beforeAdd       : null,
+      afterAdd        : null,
+      load            : null,
+      beforeSave      : null,
+      afterSave       : null,
+      update          : null,
+      ready           : null,
+      checkoutSuccess : null,
+      checkoutFail    : null,
+      beforeCheckout  : null,
+      beforeRemove    : null
+  });
+
   $(document).ready( function() {
     $("#checkout-btn").hide()  
   });
@@ -21,7 +54,7 @@
     br
     | #{cc.cardHolderName}
     br
-    | #{cc.expYear} / #{cc.expMonth}
+    | #{cc.exp}
     - }
     - customer.shippingAddr.map { addr =>
     h4 Shipping Address
@@ -37,16 +70,27 @@
     p #{phone}
     - }
   .span8.pull-right
-    p If this information is correct, click Proceed. 
-    p Your credit card will be charged, and a confirmation email sent to 
-    - if (customer.isEmailVerified) { 
-      span(style="color: green") #{customer.email}
-    - } else {
-      span(style="color: red") #{customer.email}
-    - }
-    p and the items shipped to the specified address.
-    p Thank-you for your business!
-    p
-      a(href="#") Proceed
-
+    .row.checkout-detail
+      .simpleCart_items
+    .row
+      .total-amount.pull-right  
+        span.simpleCart_total
+      .total-text.pull-right 
+        | Total
+    .row.spacer
+      p If this information is correct, click Proceed. 
+      p 
+        | Your credit card will be charged, and a confirmation email sent to 
+        - if (customer.isEmailVerified) { 
+        span(style="color: green") #{customer.email}
+        - } else {
+        span(style="color: red") #{customer.email}
+        - }
+      p and the items shipped to the specified address.
+      p 
+      | Thank-you for your business!
+      .row
+        .pull-right
+          a.btn.btn-danger(href="/") Cancel
+          a.btn.btn-success(href="#") Proceed
     

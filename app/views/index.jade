@@ -1,7 +1,43 @@
 -@ val assets:String = "/assets/"
+
 :javascript
+  
+  simpleCart({
+      cartColumns: [
+        { attr: "name", label: "Item"},
+        //{ view: "currency", attr: "price", label: "Price" },
+        { attr: "quantity", label: "Qty"},
+        { view: "decrement", label: false},
+        //{ view: "currency", attr: "total", label: "SubTotal" },
+        { view: "remove", text: "x", label: false}
+      ],
+
+      cartStyle: "div",
+
+      checkout: {
+        type: "SendForm",
+        url: "/checkout"
+      },
+
+      currency: "CAD",
+
+      language: "english-us",
+
+      beforeAdd       : function( item ) { $(".cart").fadeOut(100); },
+      afterAdd        : function( item ) { $(".cart").fadeIn(300); },
+      load            : null,
+      beforeSave      : null,
+      afterSave       : null,
+      update          : null,
+      ready           : null,
+      checkoutSuccess : null,
+      checkoutFail    : null,
+      beforeCheckout  : null,
+      beforeRemove    : null
+  });
+
   $(document).ready( function() {
-    gregsts.listen('/listen');
+      gregsts.listen('/listen');
   });
   
 .row
