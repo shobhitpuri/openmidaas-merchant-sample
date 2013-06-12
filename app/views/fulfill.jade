@@ -47,23 +47,28 @@
       em your purchase 
 .row
   .span3.sidebar
-    - customer.creditCard.map { cc =>
+    
     h4 Credit Card:
+    - customer.creditCard.map { cc =>
     p 
-    | #{cc.cardNo}
+    = cc.cardNo.substring(0,4) + "********" + cc.cardNo.substring(11,15)
     br
     | #{cc.cardHolderName}
     br
     | #{cc.exp}
+    - } getOrElse {
+    a(href="#") Enter Credit Card info
     - }
-    - customer.shippingAddr.map { addr =>
     h4 Shipping Address
+    - customer.shippingAddr.map { addr =>
     p
     | #{addr.street}
     br
     | #{addr.region}, #{addr.country}
     br
     | #{addr.code}
+    - } getOrElse {
+    a(href="#") Enter Shipping Address
     - }
     - customer.phone.map { phone =>
     h4 Phone Number
