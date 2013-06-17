@@ -81,12 +81,12 @@ object CreditCard {
 }
 
 case class Customer(
-    email:          Option[String],
+    email:           Option[String],
     isEmailVerified: Boolean,
-    phone:          Option[String],
-    creditCard:     Option[CreditCard],
-    shippingAddr:   Option[Address],
-    billAddr:       Option[Address]
+    phone:           Option[String],
+    creditCard:      Option[CreditCard],
+    shippingAddr:    Option[Address],
+    billAddr:        Option[Address]
 )
 object Customer {
     implicit val customerReads = (

@@ -1,6 +1,9 @@
 -@ val assets:String = "/assets/"
 - import model._
 -@ val customer:Customer
+-@ val points:Int
+-@ val isNew:Boolean
+- val nickname = customer.email.map{ email => email.substring(0, email.indexOf('@')) }.getOrElse{ "" };
 
 :javascript
   
@@ -75,6 +78,18 @@
     p #{phone}
     - }
   .span8.pull-right
+    - if (! isNew) {
+    | Welcome back #{nickname}, you have earned 
+    span.btn #{points} 
+    | rewards points!
+    - } else if (points > 0) {
+    | Welcome #{nickname}! A rewards account has been created for you, and you have
+    span.btn #{points}
+    | points!
+    - } else {
+    .muted
+      | Provide a verified email address to sign up for a rewards account.
+    - }
     .row.checkout-detail
       .simpleCart_items
     .row
@@ -82,14 +97,25 @@
         span.simpleCart_total
       .total-text.pull-right 
         | Total
+    - if (points > 0) {
+    .row
+      .total-amount.pull-right  
+        | save 10%
+      .total-text.pull-right(style="color: green; font-weight: bold") 
+        | Rewards:    
+    - }
     .row.spacer
-      p If this information is correct, click Proceed. 
+      p If this information on the left is correct, click Proceed. 
       p 
         | Your credit card will be charged, and a confirmation email sent to 
-        - if (customer.isEmailVerified) { 
+        - customer.email.map { email =>
+        -   if (customer.isEmailVerified) { 
         span(style="color: green") #{customer.email}
-        - } else {
-        span(style="color: red") #{customer.email}
+        -   } else {
+        span(style="color: red") #{customer.email} (unverified)
+        -   }
+        - }.getOrElse {
+        input(type="text" placeholder="email")
         - }
       p and the items shipped to the specified address.
       p 

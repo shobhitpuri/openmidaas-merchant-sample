@@ -114,7 +114,28 @@ object Application extends Controller {
           val data = Json.parse(sessionData)
           val customer = Json.fromJson[Customer](data).map { c => c }.recoverTotal{ e => Logger.warn(e.toString); throw new Exception("bad data");}
           
-          Ok(Scalate("fulfill.jade").render('customer -> customer))
+          customer.email.map { email => 
+            Cache.getAs[Int](email + ".points").map { p => 
+              val points = p + 10;
+              Cache.set(email + ".points", points)
+              
+              Ok(Scalate("fulfill.jade").render('customer -> customer, 'points -> points, 'isNew -> false))
+            }.getOrElse {
+              // no points record means new customer - verified email means new account
+              if (customer.isEmailVerified) {
+                Cache.set(email + ".points", 20)
+                Ok(Scalate("fulfill.jade").render('customer -> customer, 'points -> 20, 'isNew -> true))
+              } 
+              else
+              {
+                // no verified email, no points for you!
+                Ok(Scalate("fulfill.jade").render('customer -> customer, 'points -> 0, 'isNew -> true))
+              }
+            }
+          }.getOrElse {
+            // no email means no points for you!
+            Ok(Scalate("fulfill.jade").render('customer -> customer, 'points -> 0, 'isNew -> true))
+          }
       }.getOrElse { 
           BadRequest("Payment Data Not Available") 
       }
