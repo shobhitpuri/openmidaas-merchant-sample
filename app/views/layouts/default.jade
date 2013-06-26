@@ -15,15 +15,50 @@ head
 
   link(rel="stylesheet" type="text/css" href={ assets + "bootstrap/css/bootstrap.min.css"})
   link(rel='stylesheet' type='text/css' href={ assets + "stylesheets/main.css"})
+  link(rel="stylesheet" type="text/css" href="http://code.jquery.com/ui/1.10.3/themes/smoothness/jquery-ui.css")
 
   script(type="text/javascript" src={ assets + "javascripts/jquery-1.9.0.min.js"})
+  script(type="text/javascript" src="http://code.jquery.com/ui/1.10.3/jquery-ui.js")
   script(type="text/javascript" src={ assets + "bootstrap/js/bootstrap.min.js"})
   script(type="text/javascript" src={ assets + "javascripts/simpleCart.min.js"})
   script(type="text/javascript" src={ assets + "javascripts/gregsts.min.js"})
   
   :javascript
     $(document).ready(function() {    
-      $("#checkout").hide();
+      $('#checkout').hide();
+      $('#mobile-progress').hide();
+      $('#mobile-pop').dialog({
+        autoOpen: false,
+        resizable: false,
+        height: 270,
+        width: 400,
+        modal: true,
+        title: "Mobile ID Login",
+        buttons: {
+          "Send": function() {
+            $('#mobile-progressbar').progressbar({
+              value: false
+            });
+            $('#mobile-no').hide();
+            $('#mobile-progress').show();
+            gregsts.pingMobileID();
+          },
+          Cancel: function() {
+            $( this ).dialog( "close" );
+          }
+        },
+        close: function() {
+          $('#mobile-no').show();
+          $('#mobile-progress').hide();
+          $('#mobile-progress .alturl').empty().append('Contacting Mobile...')
+          $('#mobile-progressbar').progressbar('option', 'value', false)
+          $('#mobile-progressbar .ui-progressbar-value').css({ 'background' : '#ccc'});
+        }
+        
+      });
+      $('#mobile').click( function() {
+        $('#mobile-pop').dialog( "open" );
+      });
     });
 
 body
@@ -31,6 +66,15 @@ body
     - render("layouts/header.jade", Map("assets" -> assets))
     != body
     - render("layouts/footer.jade", Map("assets" -> assets))
+    #mobile-pop
+      p Please enter your Mobile-ID phone number
+      p(style="color:red;") Your number will not be shared with the site without your permission
+      form#mobile-form
+        input#mobile-url(type="hidden" name="url" value="")
+        input#mobile-no(type="text" placeholder="mobile number" name="number")
+        #mobile-progress
+          #mobile-progressbar
+          .alturl Contacting Mobile...
 
 :javascript
   $(".cart").click( function() {

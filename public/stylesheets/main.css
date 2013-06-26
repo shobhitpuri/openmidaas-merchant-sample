@@ -140,6 +140,20 @@ h4 {
 	width: 300px;
 }
 
+#mobile {
+	margin-top: 10px;
+}
+
+#mobile-pop {
+    font-weight: 300;
+    line-height: 18px;
+}
+
+#mobile-no {
+    margin-top: 3px;
+    width: 95%
+}
+
 .alturl {
 	font-size: 10px;
     font-weight: 300;

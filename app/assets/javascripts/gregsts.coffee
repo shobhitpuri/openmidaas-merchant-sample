@@ -10,7 +10,8 @@ class gregsts
 
   displayCheckout: (cart_data) ->      
     $('#checkout').show()	
-    $('#checkout').empty().append('Processing')
+    $('#checkoutqr').empty().append('Processing')
+    $('#mobile').hide()
     request = $.post '/checkout', cart_data
     request.done (data) ->
       img = $ '<img />'
@@ -18,7 +19,9 @@ class gregsts
       urltxt = $ '<div />'
       urltxt.addClass 'alturl'
       urltxt.text data.url
-      $('#checkout').empty().append(img).append(urltxt).
+      $('#checkoutqr').empty().append(img).append(urltxt)
+      $('#mobile-url').val data.url 
+      $('#mobile').show()
       console?.log(data.url)
 
     request.fail (jqXHR, status) ->
@@ -65,6 +68,19 @@ class gregsts
   hideCheckout: ->
     $('#checkout').hide()
 
+  pingMobileID: ->
+     request = $.post 'https://www.securekeylabs.com/mobileid/ping', {
+       'mobile_no' : $('#mobile-no').val(),
+       'url' : $('#mobile-url').val()
+     }
+     request.done (data) ->
+        console?.log 'notification sent'
+        $('#mobile-progress .alturl').append(' waiting for response')
+     request.fail () ->
+        console?.log 'notification failed'
+        $('#mobile-progress .alturl').append('failed to send notification')
+        $('#mobile-progressbar').progressbar 'option', { value: 100 }
+        $('#mobile-progressbar .ui-progressbar-value').css({ 'background' : '#ff4444'}); 
   	
 
 root.gregsts = new gregsts

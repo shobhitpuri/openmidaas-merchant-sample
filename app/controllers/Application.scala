@@ -59,7 +59,7 @@ object Application extends Controller {
       }
     }
     
-    Ok(Scalate("index.jade").render()).withSession(request.session + ("session" -> getSession))
+    Ok(Scalate("index.jade").render()).withHeaders("Access-Control-Allow-Origin" -> "*").withSession(request.session + ("session" -> getSession))
   }
 
   /**
