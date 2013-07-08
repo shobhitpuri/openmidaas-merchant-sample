@@ -69,7 +69,7 @@ class gregsts
     $('#checkout').hide()
 
   pingMobileID: ->
-     request = $.post 'https://www.securekeylabs.com/mobileid/ping', {
+     request = $.post 'URL_TO_PING_SERVER', {
        'mobile_no' : $('#mobile-no').val(),
        'url' : $('#mobile-url').val()
      }
