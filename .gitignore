@@ -1,6 +1,7 @@
 logs/
 target/
 tmp/
+bin/
 \.cache
 \.classpath
 \.project
