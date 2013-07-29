@@ -49,7 +49,7 @@ object MIDaaSResponse extends Controller {
       // parse data from JWTs.
       val vattr:JsObject = request.body.get("vattr") match {
         case Some(vjws) => Logger.info("vattr: " + vjws); vjws.headOption match {
-          case Some(actualvjws) => JoseProcessor.getJWSData(vjws.head)
+          case Some(actualvjws) => Logger.info("vattr actualvjws: " + actualvjws); JoseProcessor.getJWSData(vjws.head)
           case None => JsObject(Nil)
         }
         case None => JsObject(Nil)
@@ -58,7 +58,10 @@ object MIDaaSResponse extends Controller {
    	  
       val attr:JsObject = request.body.get("attr") match {
         case Some(v) => Logger.info("attr: " + v); v.headOption match {
-          case Some(actualvalue) => JoseProcessor.getJWTData(actualvalue)
+          case Some(actualvalue) => Logger.info("attr actualvalue: " + actualvalue); actualvalue.toString().isEmpty() match {
+            case true => JsObject(Nil)
+            case false => JoseProcessor.getJWTData(actualvalue)
+          }
           case None => JsObject(Nil)
         }
         case None => JsObject(Nil)
@@ -68,8 +71,8 @@ object MIDaaSResponse extends Controller {
       // determine if the object has an 'attr' field.
       processData(session_id, 
           { (vattr \ "attrs").asOpt[JsObject] match {
-              case Some(j) => j
-              case None => JsObject(Nil)
+              case Some(j) => Logger.info("Some value of vattr present: "); j
+              case None => Logger.info("vattr not present: "); JsObject(Nil)
             }
           } , { 
             (attr \ "attrs").asOpt[JsObject] match{
