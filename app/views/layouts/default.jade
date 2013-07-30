@@ -51,10 +51,11 @@ head
           $('#mobile-no').show();
           $('#mobile-progress').hide();
           $('#mobile-progress .alturl').empty().append('Contacting Mobile...')
-          $('#mobile-progressbar').progressbar('option', 'value', false)
-          $('#mobile-progressbar .ui-progressbar-value').css({ 'background' : '#ccc'});
+          if ( $("#mobile-progressbar").is(":data(progressbar)") ) {
+            $('#mobile-progressbar').progressbar('option', 'value', false)
+            $('#mobile-progressbar .ui-progressbar-value').css({ 'background' : '#ccc'});
+          }
         }
-        
       });
       $('#mobile').click( function() {
         $('#mobile-pop').dialog( "open" );
