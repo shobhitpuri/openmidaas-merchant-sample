@@ -53,8 +53,8 @@ head
           $('#mobile-progress .alturl').empty().append('Contacting Mobile...')
           if ( $("#mobile-progressbar").is(":data(progressbar)") ) {
             $('#mobile-progressbar').progressbar('option', 'value', false)
-            $('#mobile-progressbar .ui-progressbar-value').css({ 'background' : '#ccc'});
           }
+          $('#mobile-progressbar .ui-progressbar-value').css({ 'background' : '#ccc'});
         }
       });
       $('#mobile').click( function() {
